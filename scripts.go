@@ -98,7 +98,7 @@ func (*Model) TableName() string {
 }
 
 func (*PredictionStyle) TableName() string {
-	return "lora_prediction_styles"
+	return "test_style"
 }
 
 var db *gorm.DB
@@ -109,7 +109,8 @@ var tmp map[string]interface{}
 
 func init() {
 	_ = json.Unmarshal([]byte(raw), &tmp)
-	dsn := "07bd883e-e5c4-4c10-a57c-33802bed9fea:OXTBZjRb1E3AHRj8@tcp(k8s-jumpserv-jumpserv-43ba1922f6-105fd2b24be59fac.elb.ap-southeast-1.amazonaws.com:33060)/test?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "423ac025-7450-416e-8214-a9882b702c19:f327xgPXLgiDiHlh@tcp(k8s-jumpserv-jumpserv-43ba1922f6-105fd2b24be59fac.elb.ap-southeast-1.amazonaws.com:33060)" +
+		"/dev02_pay_aigc_service?charset=utf8mb4&parseTime=True&loc=Local"
 	db, _ = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Error)})
 }
 
@@ -179,6 +180,7 @@ func helper(path string, category string) {
 			tmp["txt2img_payload"].(map[string]interface{})["sampler_index"] = matchMap["sampler"]
 			tmp["txt2img_payload"].(map[string]interface{})["cfg_scale"] = scale
 			tmp["txt2img_payload"].(map[string]interface{})["seed"] = seed
+			tmp["vae"] = "sd_xl_base_1.0_vae.safetensors"
 
 		}
 		bf := bytes.NewBuffer([]byte{})
@@ -212,6 +214,13 @@ func helper(path string, category string) {
 		//	Type:  name,
 		//	Model: matchMap["model"],
 		//}
+		// 自动迁移（创建表）
+		err_ := db.AutoMigrate(&PredictionStyle{})
+		if err_ != nil {
+			fmt.Println("Error creating table:", err_)
+		} else {
+			fmt.Println("Table created successfully")
+		}
 		err := db.Create(&style).Error
 		if err != nil {
 			fmt.Println(lora.Name)
